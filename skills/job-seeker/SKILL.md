@@ -1,6 +1,6 @@
 ---
 name: job-seeker
-description: Help job seekers submit resumes to the job matching system. Use when users want to: (1) apply for jobs, (2) submit their resume, (3) find job opportunities, (4) look for positions, (5) search for work, or (6) express interest in job hunting. Supports flexible information collection - users can provide all details at once or be guided through step-by-step. Automatically creates user account, generates resume vectors, and triggers AI-powered job matching.
+description: "Help job seekers submit resumes to the job matching system. Use when users want to: (1) apply for jobs, (2) submit their resume, (3) find job opportunities, (4) look for positions, (5) search for work, or (6) express interest in job hunting. Supports flexible information collection - users can provide all details at once or be guided through step-by-step. Automatically creates user account, generates resume vectors, and triggers AI-powered job matching."
 ---
 
 # Job Seeker
