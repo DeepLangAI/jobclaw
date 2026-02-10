@@ -12,7 +12,7 @@ def submit_resume(api_url, resume_data):
     Submit resume to the API.
 
     Args:
-        api_url: Base URL of the API (e.g., https://www.jobclaw.ai)
+        api_url: Base URL of the API (e.g., https://api.jobclaw.ai)
         resume_data: Dictionary containing:
             - token: Authentication token (optional, will create new user if not provided)
             - resumeText: Resume content (required)
@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     try:
         data = json.loads(sys.argv[1])
-        api_url = data.get('apiUrl', 'https://www.jobclaw.ai')
+        api_url = data.get('apiUrl', 'https://api.jobclaw.ai')
         result = submit_resume(api_url, data)
         print(json.dumps(result, ensure_ascii=False, indent=2))
     except Exception as e:

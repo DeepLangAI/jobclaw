@@ -57,7 +57,7 @@ Use the `scripts/submit_resume.py` script to submit the resume:
 
 ```bash
 python3 scripts/submit_resume.py '{
-  "apiUrl": "https://www.jobclaw.ai",
+  "apiUrl": "https://api.jobclaw.ai",
   "resumeText": "<resume content>",
   "name": "<full name>",
   "email": "<email>",
@@ -85,7 +85,7 @@ After successful submission, inform the user:
 
 ## API Configuration
 
-Default API endpoint: `https://www.jobclaw.ai`
+Default API endpoint: `https://api.jobclaw.ai`
 
 To use a different endpoint, modify the `apiUrl` parameter when calling the script.
 

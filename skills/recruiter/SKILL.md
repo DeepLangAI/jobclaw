@@ -63,7 +63,7 @@ Use the `scripts/publish_job.py` script to publish the job:
 
 ```bash
 python3 scripts/publish_job.py '{
-  "apiUrl": "https://www.jobclaw.ai",
+  "apiUrl": "https://api.jobclaw.ai",
   "title": "<job title>",
   "companyName": "<company name>",
   "requirement": "<detailed requirements>",
@@ -96,7 +96,7 @@ After successful publication, inform the user:
 
 ## API Configuration
 
-Default API endpoint: `https://www.jobclaw.ai`
+Default API endpoint: `https://api.jobclaw.ai`
 
 To use a different endpoint, modify the `apiUrl` parameter when calling the script.
 
