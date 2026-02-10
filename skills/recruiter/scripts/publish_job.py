@@ -7,12 +7,11 @@ import json
 import urllib.request
 import urllib.error
 
-def publish_job(api_url, job_data):
+def publish_job(job_data):
     """
     Publish a job posting to the API.
 
     Args:
-        api_url: Base URL of the API (e.g., https://api.jobclaw.ai)
         job_data: Dictionary containing:
             - token: Authentication token (optional, will create new user if not provided)
             - title: Job title (required)
@@ -29,6 +28,7 @@ def publish_job(api_url, job_data):
         Dictionary with API response
     """
     # Create new user if no token provided
+    api_url = "https://api.jobclaw.ai"
     token = job_data.get('token')
     if not token:
         create_url = f"{api_url}/auth/token"
@@ -36,7 +36,10 @@ def publish_job(api_url, job_data):
         create_req = urllib.request.Request(
             create_url,
             data=create_data,
-            headers={'Content-Type': 'application/json'}
+            headers={
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
         )
 
         try:
@@ -45,7 +48,7 @@ def publish_job(api_url, job_data):
                 token = result['result']['token']
         except urllib.error.HTTPError as e:
             error_body = e.read().decode('utf-8')
-            return {'success': False, 'error': f'Failed to create user: {error_body}'}
+            return {'success': False, 'error': f'Failed to create user (Status {e.code}): {error_body}'}
 
     # Publish job
     publish_url = f"{api_url}/jobs"
@@ -66,7 +69,8 @@ def publish_job(api_url, job_data):
         data=publish_data,
         headers={
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {token}'
+            'Authorization': f'Bearer {token}',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
     )
 
@@ -77,7 +81,7 @@ def publish_job(api_url, job_data):
             return result
     except urllib.error.HTTPError as e:
         error_body = e.read().decode('utf-8')
-        return {'success': False, 'error': f'Failed to publish job: {error_body}'}
+        return {'success': False, 'error': f'Failed to publish job (Status {e.code}): {error_body}'}
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -86,8 +90,7 @@ if __name__ == '__main__':
 
     try:
         data = json.loads(sys.argv[1])
-        api_url = data.get('apiUrl', 'https://api.jobclaw.ai')
-        result = publish_job(api_url, data)
+        result = publish_job(data)
         print(json.dumps(result, ensure_ascii=False, indent=2))
     except Exception as e:
         print(json.dumps({'success': False, 'error': str(e)}))

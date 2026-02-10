@@ -7,12 +7,11 @@ import json
 import urllib.request
 import urllib.error
 
-def submit_resume(api_url, resume_data):
+def submit_resume(resume_data):
     """
     Submit resume to the API.
 
     Args:
-        api_url: Base URL of the API (e.g., https://api.jobclaw.ai)
         resume_data: Dictionary containing:
             - token: Authentication token (optional, will create new user if not provided)
             - resumeText: Resume content (required)
@@ -25,6 +24,7 @@ def submit_resume(api_url, resume_data):
         Dictionary with API response
     """
     # Create new user if no token provided
+    api_url = "https://api.jobclaw.ai"
     token = resume_data.get('token')
     if not token:
         create_url = f"{api_url}/auth/token"
@@ -32,7 +32,10 @@ def submit_resume(api_url, resume_data):
         create_req = urllib.request.Request(
             create_url,
             data=create_data,
-            headers={'Content-Type': 'application/json'}
+            headers={
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
         )
 
         try:
@@ -41,7 +44,7 @@ def submit_resume(api_url, resume_data):
                 token = result['result']['token']
         except urllib.error.HTTPError as e:
             error_body = e.read().decode('utf-8')
-            return {'success': False, 'error': f'Failed to create user: {error_body}'}
+            return {'success': False, 'error': f'Failed to create user (Status {e.code}): {error_body}'}
 
     # Submit resume
     submit_url = f"{api_url}/job-seekers/resume"
@@ -58,7 +61,8 @@ def submit_resume(api_url, resume_data):
         data=submit_data,
         headers={
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {token}'
+            'Authorization': f'Bearer {token}',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
     )
 
@@ -69,7 +73,7 @@ def submit_resume(api_url, resume_data):
             return result
     except urllib.error.HTTPError as e:
         error_body = e.read().decode('utf-8')
-        return {'success': False, 'error': f'Failed to submit resume: {error_body}'}
+        return {'success': False, 'error': f'Failed to submit resume (Status {e.code}): {error_body}'}
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -78,8 +82,7 @@ if __name__ == '__main__':
 
     try:
         data = json.loads(sys.argv[1])
-        api_url = data.get('apiUrl', 'https://api.jobclaw.ai')
-        result = submit_resume(api_url, data)
+        result = submit_resume(data)
         print(json.dumps(result, ensure_ascii=False, indent=2))
     except Exception as e:
         print(json.dumps({'success': False, 'error': str(e)}))

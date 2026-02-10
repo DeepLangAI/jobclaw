@@ -1,6 +1,6 @@
 ---
 name: recruiter
-description: "Help recruiters publish job postings to the job matching system. Use when users want to: (1) post a job, (2) publish a position, (3) hire someone, (4) recruit candidates, (5) find employees, or (6) advertise job openings. Supports flexible information collection - users can provide all details at once or be guided through step-by-step. Automatically creates recruiter account, generates job vectors, and enables AI-powered candidate matching."
+description: Help recruiters publish job postings to the job matching system. Use when users want to: (1) post a job, (2) publish a position, (3) hire someone, (4) recruit candidates, (5) find employees, or (6) advertise job openings. Supports flexible information collection - users can provide all details at once or be guided through step-by-step. Automatically creates recruiter account, generates job vectors, and enables AI-powered candidate matching.
 ---
 
 # Recruiter
@@ -24,6 +24,7 @@ This skill helps recruiters publish job postings through an interactive conversa
 Collect the following required fields. Users can provide them in any order or all at once:
 
 **Required fields:**
+
 - **Job title**: Position name (e.g., "Senior Python Backend Engineer")
 - **Company name**: Employer name
 - **Job requirements**: Detailed requirements including skills, responsibilities, and qualifications
@@ -35,10 +36,12 @@ Collect the following required fields. Users can provide them in any order or al
 
 **Example user inputs:**
 
-*All at once:*
+_All at once:_
+
 > "I want to post a job for a Python Backend Engineer at Pinduoduo in Shanghai Changning District. Salary 25k-40k. Requirements: Familiar with Python, Django/Flask frameworks, RESTful API development experience. Knowledge of MySQL, Redis databases. E-commerce or payment system experience preferred. Full-time position, bachelor's degree or above, 3-5 years experience."
 
-*Step by step:*
+_Step by step:_
+
 > "I need to hire a developer"
 > [Claude asks for job title]
 > "Python Backend Engineer"
@@ -63,7 +66,6 @@ Use the `scripts/publish_job.py` script to publish the job:
 
 ```bash
 python3 scripts/publish_job.py '{
-  "apiUrl": "https://api.jobclaw.ai",
   "title": "<job title>",
   "companyName": "<company name>",
   "requirement": "<detailed requirements>",
@@ -77,6 +79,7 @@ python3 scripts/publish_job.py '{
 ```
 
 The script will:
+
 - Create a new recruiter account automatically
 - Publish the job posting with all information
 - Return the authentication token and job ID
@@ -92,17 +95,13 @@ After successful publication, inform the user:
 - Provide the authentication token for future reference (optional)
 
 **Example response:**
+
 > "Your job posting has been published successfully! Job ID: 7. The AI matching system is analyzing your requirements and will find qualified candidates. This typically takes about 5 seconds. You'll receive candidate matches with similarity scores showing how well each applicant fits your requirements."
-
-## API Configuration
-
-Default API endpoint: `https://api.jobclaw.ai`
-
-To use a different endpoint, modify the `apiUrl` parameter when calling the script.
 
 ## Error Handling
 
 If publication fails:
+
 - Check if the API server is running
 - Verify all required fields are provided
 - Ensure the API endpoint is correct
@@ -113,6 +112,7 @@ If publication fails:
 ### scripts/publish_job.py
 
 Python script that handles:
+
 - Creating new recruiter accounts
 - Publishing job postings to the API
 - Returning authentication tokens and job IDs

@@ -1,6 +1,6 @@
 ---
 name: job-seeker
-description: "Help job seekers submit resumes to the job matching system. Use when users want to: (1) apply for jobs, (2) submit their resume, (3) find job opportunities, (4) look for positions, (5) search for work, or (6) express interest in job hunting. Supports flexible information collection - users can provide all details at once or be guided through step-by-step. Automatically creates user account, generates resume vectors, and triggers AI-powered job matching."
+description: Help job seekers submit resumes to the job matching system. Use when users want to: (1) apply for jobs, (2) submit their resume, (3) find job opportunities, (4) look for positions, (5) search for work, or (6) express interest in job hunting. Supports flexible information collection - users can provide all details at once or be guided through step-by-step. Automatically creates user account, generates resume vectors, and triggers AI-powered job matching.
 ---
 
 # Job Seeker
@@ -24,6 +24,7 @@ This skill helps job seekers submit their resumes through an interactive convers
 Collect the following required fields. Users can provide them in any order or all at once:
 
 **Required fields:**
+
 - **Resume text**: Detailed work experience, skills, education, and achievements
 - **Name**: Full name
 - **Email**: Contact email address
@@ -32,10 +33,12 @@ Collect the following required fields. Users can provide them in any order or al
 
 **Example user inputs:**
 
-*All at once:*
+_All at once:_
+
 > "I want to apply for jobs. My name is Zhang Wei, email zhangwei@example.com, phone 13800138000. I'm a senior Python backend engineer with 4 years of experience. Proficient in Python, Django, Flask, RESTful API development. Familiar with MySQL, Redis, PostgreSQL. Worked on e-commerce payment and order systems. Looking for Python backend engineer positions."
 
-*Step by step:*
+_Step by step:_
+
 > "Help me find a job"
 > [Claude asks for resume]
 > "I'm a Python developer with 4 years experience..."
@@ -57,7 +60,6 @@ Use the `scripts/submit_resume.py` script to submit the resume:
 
 ```bash
 python3 scripts/submit_resume.py '{
-  "apiUrl": "https://api.jobclaw.ai",
   "resumeText": "<resume content>",
   "name": "<full name>",
   "email": "<email>",
@@ -67,6 +69,7 @@ python3 scripts/submit_resume.py '{
 ```
 
 The script will:
+
 - Create a new job seeker account automatically
 - Submit the resume with all information
 - Return the authentication token and submission result
@@ -81,17 +84,13 @@ After successful submission, inform the user:
 - Provide the authentication token for future reference (optional)
 
 **Example response:**
+
 > "Your resume has been submitted successfully! The AI matching system is analyzing your profile and will find relevant job opportunities. This typically takes about 10 seconds. You'll receive matches with similarity scores showing how well each position fits your background."
-
-## API Configuration
-
-Default API endpoint: `https://api.jobclaw.ai`
-
-To use a different endpoint, modify the `apiUrl` parameter when calling the script.
 
 ## Error Handling
 
 If submission fails:
+
 - Check if the API server is running
 - Verify all required fields are provided
 - Ensure the API endpoint is correct
@@ -102,6 +101,7 @@ If submission fails:
 ### scripts/submit_resume.py
 
 Python script that handles:
+
 - Creating new job seeker accounts
 - Submitting resume data to the API
 - Returning authentication tokens and results
