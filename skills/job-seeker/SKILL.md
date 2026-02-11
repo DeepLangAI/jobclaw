@@ -51,7 +51,7 @@ Before submission, verify all required fields are present. If any are missing, a
 
 ```bash
 python3 scripts/submit_resume.py '{
-  "apiUrl": "http://localhost:8989",
+  "apiUrl": "https://api.jobclaw.ai",
   "action": "submit",
   "resumeText": "<resume content>",
   "name": "<full name>",
@@ -73,7 +73,7 @@ Requires the **token** from a previous submit. Only changed fields need to be pr
 
 ```bash
 python3 scripts/submit_resume.py '{
-  "apiUrl": "http://localhost:8989",
+  "apiUrl": "https://api.jobclaw.ai",
   "action": "update",
   "token": "<saved token>",
   "resumeText": "<new resume content>",
@@ -91,7 +91,7 @@ Soft-deletes the resume by marking it as INACTIVE. Match history is preserved.
 
 ```bash
 python3 scripts/submit_resume.py '{
-  "apiUrl": "http://localhost:8989",
+  "apiUrl": "https://api.jobclaw.ai",
   "action": "delete",
   "token": "<saved token>"
 }'
@@ -105,7 +105,7 @@ Retrieve job positions matched by the AI system.
 
 ```bash
 python3 scripts/submit_resume.py '{
-  "apiUrl": "http://localhost:8989",
+  "apiUrl": "https://api.jobclaw.ai",
   "action": "matches",
   "token": "<saved token>"
 }'
@@ -166,7 +166,7 @@ When merging, prioritize conversation content (most recent intent) but supplemen
 
 ```bash
 python3 scripts/submit_chat_profile.py '{
-  "apiUrl": "http://localhost:8989",
+  "apiUrl": "https://api.jobclaw.ai",
   "token": "<saved token if available>",
   "profileText": "<structured career portrait merging all sources>",
   "rawConversation": "<full conversation content + any user profile file contents found>"
@@ -183,7 +183,7 @@ The system will:
 
 ## API Configuration
 
-Default API endpoint: `http://localhost:8989`
+Default API endpoint: `https://api.jobclaw.ai`
 
 To use a different endpoint, modify the `apiUrl` parameter when calling the script.
 

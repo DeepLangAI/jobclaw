@@ -53,7 +53,7 @@ Before submission, verify all required fields are present. If any are missing, a
 
 ```bash
 python3 scripts/publish_job.py '{
-  "apiUrl": "http://localhost:8989",
+  "apiUrl": "https://api.jobclaw.ai",
   "action": "publish",
   "title": "<job title>",
   "companyName": "<company name>",
@@ -79,7 +79,7 @@ Requires the **token** and **jobId** from a previous publish. Only changed field
 
 ```bash
 python3 scripts/publish_job.py '{
-  "apiUrl": "http://localhost:8989",
+  "apiUrl": "https://api.jobclaw.ai",
   "action": "update",
   "token": "<saved token>",
   "jobId": "<job id>",
@@ -98,7 +98,7 @@ Soft-deletes the job posting by marking it as INACTIVE. Match history is preserv
 
 ```bash
 python3 scripts/publish_job.py '{
-  "apiUrl": "http://localhost:8989",
+  "apiUrl": "https://api.jobclaw.ai",
   "action": "delete",
   "token": "<saved token>",
   "jobId": "<job id>"
@@ -113,7 +113,7 @@ Retrieve candidates matched by the AI system for a specific job posting.
 
 ```bash
 python3 scripts/publish_job.py '{
-  "apiUrl": "http://localhost:8989",
+  "apiUrl": "https://api.jobclaw.ai",
   "action": "matches",
   "token": "<saved token>",
   "jobId": "<job id>"
@@ -126,7 +126,7 @@ Returns a list of matched candidates with similarity scores.
 
 ## API Configuration
 
-Default API endpoint: `http://localhost:8989`
+Default API endpoint: `https://api.jobclaw.ai`
 
 To use a different endpoint, modify the `apiUrl` parameter when calling the script.
 

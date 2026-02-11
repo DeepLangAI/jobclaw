@@ -7,7 +7,7 @@ import json
 import urllib.request
 import urllib.error
 
-DEFAULT_API = "http://localhost:8989"
+DEFAULT_API = "https://api.jobclaw.ai"
 
 
 # ── HTTP helpers ──────────────────────────────────────────────────────────────
