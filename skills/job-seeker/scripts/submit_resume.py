@@ -4,8 +4,11 @@ Job seeker CLI: submit, update, delete resume and list matched jobs.
 """
 import sys
 import json
+import os
 import urllib.request
 import urllib.error
+
+TOKEN_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".token")
 
 DEFAULT_API = "https://api.jobclaw.ai"
 
@@ -14,7 +17,10 @@ DEFAULT_API = "https://api.jobclaw.ai"
 
 def _request(url, method="GET", data=None, token=None):
     """Send an HTTP request and return parsed JSON or an error dict."""
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "JobClaw-Skill-Script/1.0"
+    }
     if token:
         headers["Authorization"] = f"Bearer {token}"
     body = json.dumps(data).encode("utf-8") if data else None
@@ -26,13 +32,36 @@ def _request(url, method="GET", data=None, token=None):
         return {"success": False, "error": e.read().decode("utf-8")}
 
 
-def _ensure_token(api_url, token):
-    """Return existing token or create a new JOB_SEEKER account and return its token."""
+def _ensure_token(api_url, token, user_type="JOB_SEEKER"):
+    """Return existing token (from args or file) or create a new one."""
+    
+    # 1. Use provided token if valid
     if token:
         return token, None
-    res = _request(f"{api_url}/auth/token", method="POST", data={"userType": "JOB_SEEKER"})
+
+    # 2. Try to load from file
+    if os.path.exists(TOKEN_FILE):
+        try:
+            with open(TOKEN_FILE, 'r') as f:
+                saved_token = f.read().strip()
+            # Verify token
+            verify_res = _request(f"{api_url}/auth/verify", token=saved_token)
+            if verify_res.get("result", {}).get("valid"):
+                return saved_token, None
+        except:
+            pass
+
+    # 3. Create new token
+    res = _request(f"{api_url}/auth/token", method="POST", data={"userType": user_type})
     if "result" in res:
-        return res["result"]["token"], None
+        new_token = res["result"]["token"]
+        try:
+            with open(TOKEN_FILE, 'w') as f:
+                f.write(new_token)
+        except:
+            pass
+        return new_token, None
+        
     return None, res
 
 
@@ -51,9 +80,9 @@ def submit_resume(api_url, data):
 
 def update_resume(api_url, data):
     """Update an existing resume / profile (partial update supported)."""
-    token = data.get("token")
-    if not token:
-        return {"success": False, "error": "token is required for update"}
+    token, err = _ensure_token(api_url, data.get("token"))
+    if err:
+        return err
     fields = ("resumeText", "name", "email", "phone", "jobIntention")
     payload = {k: data[k] for k in fields if k in data}
     # Map resumeText to resumeRawContent for the update API
@@ -68,9 +97,9 @@ def update_resume(api_url, data):
 
 def delete_resume(api_url, data):
     """Soft-delete resume by setting status to INACTIVE."""
-    token = data.get("token")
-    if not token:
-        return {"success": False, "error": "token is required for delete"}
+    token, err = _ensure_token(api_url, data.get("token"))
+    if err:
+        return err
     res = _request(f"{api_url}/job-seekers/profile", method="PUT", data={"status": "INACTIVE"}, token=token)
     res["token"] = token
     return res
@@ -78,9 +107,9 @@ def delete_resume(api_url, data):
 
 def list_matches(api_url, data):
     """List matched job positions for the current job seeker."""
-    token = data.get("token")
-    if not token:
-        return {"success": False, "error": "token is required for listing matches"}
+    token, err = _ensure_token(api_url, data.get("token"))
+    if err:
+        return err
     res = _request(f"{api_url}/matches", token=token)
     res["token"] = token
     return res
@@ -96,11 +125,18 @@ ACTIONS = {
 }
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print(json.dumps({"success": False, "error": f"Usage: submit_resume.py <json>  (action: {', '.join(ACTIONS)})"}))
-        sys.exit(1)
+    data = None
     try:
-        data = json.loads(sys.argv[1])
+        if len(sys.argv) > 1:
+            data = json.loads(sys.argv[1])
+        elif not sys.stdin.isatty():
+            input_data = sys.stdin.read()
+            if input_data.strip():
+                data = json.loads(input_data)
+        
+        if not data:
+            print(json.dumps({"success": False, "error": f"Usage: submit_resume.py <json> (or pipe json to stdin)"}))
+            sys.exit(1)
         api_url = data.pop("apiUrl", DEFAULT_API)
         action = data.pop("action", "submit")
         fn = ACTIONS.get(action)

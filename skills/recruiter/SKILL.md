@@ -25,6 +25,7 @@ This skill helps recruiters manage job postings through an interactive conversat
 Collect the following required fields. Users can provide them in any order or all at once:
 
 **Required fields:**
+
 - **Job title**: Position name (e.g., "Senior Python Backend Engineer")
 - **Company name**: Employer name
 - **Job requirements**: Detailed requirements including skills, responsibilities, and qualifications
@@ -36,10 +37,12 @@ Collect the following required fields. Users can provide them in any order or al
 
 **Example user inputs:**
 
-*All at once:*
+_All at once:_
+
 > "I want to post a job for a Python Backend Engineer at Pinduoduo in Shanghai Changning District. Salary 25k-40k. Requirements: Familiar with Python, Django/Flask frameworks, RESTful API development experience. Knowledge of MySQL, Redis databases. E-commerce or payment system experience preferred. Full-time position, bachelor's degree or above, 3-5 years experience."
 
-*Step by step:*
+_Step by step:_
+
 > "I need to hire a developer"
 > [Claude asks for job title]
 > "Python Backend Engineer"
@@ -52,8 +55,8 @@ Before submission, verify all required fields are present. If any are missing, a
 #### Step 3: Publish Job Posting
 
 ```bash
-python3 scripts/publish_job.py '{
-  "apiUrl": "https://api.jobclaw.ai",
+cat <<EOF | python3 scripts/publish_job.py
+{
   "action": "publish",
   "title": "<job title>",
   "companyName": "<company name>",
@@ -64,28 +67,29 @@ python3 scripts/publish_job.py '{
   "education": "<education requirement>",
   "experience": "<experience requirement>",
   "status": "ACTIVE"
-}'
+}
+EOF
 ```
 
 #### Step 4: Confirm Success
 
-After successful publication, inform the user and **save the returned token and job ID** for future operations (update, delete, list matches).
+After successful publication, inform the user and **save the returned job ID** for future operations (update, delete, list matches). The token is automatically saved.
 
 ---
 
 ### Update Job (action: update)
 
-Requires the **token** and **jobId** from a previous publish. Only changed fields need to be provided.
+Requires the **jobId** from a previous publish. Only changed fields need to be provided. The script will automatically use the saved token.
 
 ```bash
-python3 scripts/publish_job.py '{
-  "apiUrl": "https://api.jobclaw.ai",
+cat <<EOF | python3 scripts/publish_job.py
+{
   "action": "update",
-  "token": "<saved token>",
   "jobId": "<job id>",
   "salary": "<new salary range>",
   "requirement": "<updated requirements>"
-}'
+}
+EOF
 ```
 
 Updatable fields: `title`, `companyName`, `requirement`, `salary`, `location`, `jobType`, `education`, `experience`, `status`.
@@ -97,12 +101,12 @@ Updatable fields: `title`, `companyName`, `requirement`, `salary`, `location`, `
 Soft-deletes the job posting by marking it as INACTIVE. Match history is preserved.
 
 ```bash
-python3 scripts/publish_job.py '{
-  "apiUrl": "https://api.jobclaw.ai",
+cat <<EOF | python3 scripts/publish_job.py
+{
   "action": "delete",
-  "token": "<saved token>",
   "jobId": "<job id>"
-}'
+}
+EOF
 ```
 
 ---
@@ -112,12 +116,12 @@ python3 scripts/publish_job.py '{
 Retrieve candidates matched by the AI system for a specific job posting.
 
 ```bash
-python3 scripts/publish_job.py '{
-  "apiUrl": "https://api.jobclaw.ai",
+cat <<EOF | python3 scripts/publish_job.py
+{
   "action": "matches",
-  "token": "<saved token>",
   "jobId": "<job id>"
-}'
+}
+EOF
 ```
 
 Returns a list of matched candidates with similarity scores.
@@ -133,10 +137,11 @@ To use a different endpoint, modify the `apiUrl` parameter when calling the scri
 ## Error Handling
 
 If any operation fails:
+
 - Check if the API server is running
 - Verify all required fields are provided
 - Ensure the API endpoint is correct
-- For update/delete/matches: ensure a valid **token** and **jobId** are provided
+- For update/delete/matches: ensure a valid **jobId** is provided
 - Review the error message and guide the user accordingly
 
 ## Resources
@@ -144,6 +149,7 @@ If any operation fails:
 ### scripts/publish_job.py
 
 Python script supporting four actions (`publish`, `update`, `delete`, `matches`):
+
 - Creating new recruiter accounts (auto-created on publish)
 - Publishing and updating job postings
 - Soft-deleting job postings (mark INACTIVE)

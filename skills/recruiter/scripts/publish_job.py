@@ -4,8 +4,11 @@ Recruiter CLI: publish, update, delete job postings and list matched candidates.
 """
 import sys
 import json
+import os
 import urllib.request
 import urllib.error
+
+TOKEN_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".token")
 
 DEFAULT_API = "https://api.jobclaw.ai"
 
@@ -14,7 +17,10 @@ DEFAULT_API = "https://api.jobclaw.ai"
 
 def _request(url, method="GET", data=None, token=None):
     """Send an HTTP request and return parsed JSON or an error dict."""
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "JobClaw-Skill-Script/1.0"
+    }
     if token:
         headers["Authorization"] = f"Bearer {token}"
     body = json.dumps(data).encode("utf-8") if data else None
@@ -26,13 +32,36 @@ def _request(url, method="GET", data=None, token=None):
         return {"success": False, "error": e.read().decode("utf-8")}
 
 
-def _ensure_token(api_url, token):
-    """Return existing token or create a new RECRUITER account and return its token."""
+def _ensure_token(api_url, token, user_type="RECRUITER"):
+    """Return existing token (from args or file) or create a new one."""
+    
+    # 1. Use provided token if valid
     if token:
         return token, None
-    res = _request(f"{api_url}/auth/token", method="POST", data={"userType": "RECRUITER"})
+
+    # 2. Try to load from file
+    if os.path.exists(TOKEN_FILE):
+        try:
+            with open(TOKEN_FILE, 'r') as f:
+                saved_token = f.read().strip()
+            # Verify token
+            verify_res = _request(f"{api_url}/auth/verify", token=saved_token)
+            if verify_res.get("result", {}).get("valid"):
+                return saved_token, None
+        except:
+            pass
+
+    # 3. Create new token
+    res = _request(f"{api_url}/auth/token", method="POST", data={"userType": user_type})
     if "result" in res:
-        return res["result"]["token"], None
+        new_token = res["result"]["token"]
+        try:
+            with open(TOKEN_FILE, 'w') as f:
+                f.write(new_token)
+        except:
+            pass
+        return new_token, None
+        
     return None, res
 
 
@@ -55,10 +84,10 @@ def publish_job(api_url, data):
 
 def update_job(api_url, data):
     """Update an existing job posting (partial update supported)."""
-    token = data.get("token")
+    token, err = _ensure_token(api_url, data.get("token"))
+    if err:
+        return err
     job_id = data.get("jobId")
-    if not token:
-        return {"success": False, "error": "token is required for update"}
     if not job_id:
         return {"success": False, "error": "jobId is required for update"}
     payload = {k: data[k] for k in (*JOB_FIELDS, "status") if k in data}
@@ -71,10 +100,10 @@ def update_job(api_url, data):
 
 def delete_job(api_url, data):
     """Soft-delete a job posting by setting status to INACTIVE."""
-    token = data.get("token")
+    token, err = _ensure_token(api_url, data.get("token"))
+    if err:
+        return err
     job_id = data.get("jobId")
-    if not token:
-        return {"success": False, "error": "token is required for delete"}
     if not job_id:
         return {"success": False, "error": "jobId is required for delete"}
     res = _request(f"{api_url}/jobs/{job_id}", method="PUT", data={"status": "INACTIVE"}, token=token)
@@ -84,10 +113,10 @@ def delete_job(api_url, data):
 
 def list_matches(api_url, data):
     """List matched candidates for a specific job posting."""
-    token = data.get("token")
+    token, err = _ensure_token(api_url, data.get("token"))
+    if err:
+        return err
     job_id = data.get("jobId")
-    if not token:
-        return {"success": False, "error": "token is required for listing matches"}
     if not job_id:
         return {"success": False, "error": "jobId is required for listing matches"}
     res = _request(f"{api_url}/matches/job/{job_id}", token=token)
@@ -105,11 +134,18 @@ ACTIONS = {
 }
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print(json.dumps({"success": False, "error": f"Usage: publish_job.py <json>  (action: {', '.join(ACTIONS)})"}))
-        sys.exit(1)
+    data = None
     try:
-        data = json.loads(sys.argv[1])
+        if len(sys.argv) > 1:
+            data = json.loads(sys.argv[1])
+        elif not sys.stdin.isatty():
+            input_data = sys.stdin.read()
+            if input_data.strip():
+                data = json.loads(input_data)
+        
+        if not data:
+            print(json.dumps({"success": False, "error": f"Usage: publish_job.py <json> (or pipe json to stdin)"}))
+            sys.exit(1)
         api_url = data.pop("apiUrl", DEFAULT_API)
         action = data.pop("action", "publish")
         fn = ACTIONS.get(action)
