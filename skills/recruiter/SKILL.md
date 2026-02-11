@@ -1,71 +1,60 @@
 ---
 name: recruiter
-description: Help recruiters publish job postings to the job matching system. Use when users want to: (1) post a job, (2) publish a position, (3) hire someone, (4) recruit candidates, (5) find employees, or (6) advertise job openings. Supports flexible information collection - users can provide all details at once or be guided through step-by-step. Automatically creates recruiter account, generates job vectors, and enables AI-powered candidate matching.
+description: "Help recruiters publish job postings to the job matching system. Use when users want to: (1) post a job, (2) publish a position, (3) hire someone, (4) recruit candidates, (5) find employees, or (6) advertise job openings. Supports flexible information collection - users can provide all details at once or be guided through step-by-step. Automatically creates recruiter account, generates job vectors, and enables AI-powered candidate matching."
 ---
 
 # Recruiter
 
-Publish job postings to the AI-powered job matching system and get matched with qualified candidates.
+Publish, update, and manage job postings in the AI-powered job matching system, and view matched candidates.
 
 ## Overview
 
-This skill helps recruiters publish job postings through an interactive conversation. Provide information flexibly - share everything at once or answer questions step-by-step. The system will:
+This skill helps recruiters manage job postings through an interactive conversation. Provide information flexibly - share everything at once or answer questions step-by-step. The system supports:
 
-1. Collect all required job posting information
-2. Create a recruiter account automatically
-3. Generate AI embeddings from the job description
-4. Match with qualified job seekers
-5. Return matching candidates with similarity scores
+1. **Publish job** - Create a recruiter account, publish a job posting, and trigger AI matching
+2. **Update job** - Modify job details (title, requirements, salary, etc.)
+3. **Delete job** - Soft-delete job posting (mark as INACTIVE, preserving match history)
+4. **List matched candidates** - View candidates matched by the AI system with similarity scores
 
 ## Workflow
 
-### Step 1: Gather Job Posting Information
+### Publish Job (action: publish)
+
+#### Step 1: Gather Job Posting Information
 
 Collect the following required fields. Users can provide them in any order or all at once:
 
 **Required fields:**
-
 - **Job title**: Position name (e.g., "Senior Python Backend Engineer")
 - **Company name**: Employer name
 - **Job requirements**: Detailed requirements including skills, responsibilities, and qualifications
 - **Salary range**: Compensation range (e.g., "25k-40k", "30k-50k")
-- **Work location**: Office location (e.g., "Shanghai·Changning District", "Beijing·Chaoyang District")
+- **Work location**: Office location (e.g., "Shanghai-Changning District", "Beijing-Chaoyang District")
 - **Job type**: Employment type (e.g., "Full-time", "Part-time", "Contract")
-- **Education requirement**: Minimum education level (e.g., "Bachelor's degree or above", "Master's degree preferred")
+- **Education requirement**: Minimum education level (e.g., "Bachelor's degree or above")
 - **Experience requirement**: Required years of experience (e.g., "3-5 years", "5+ years")
 
 **Example user inputs:**
 
-_All at once:_
-
+*All at once:*
 > "I want to post a job for a Python Backend Engineer at Pinduoduo in Shanghai Changning District. Salary 25k-40k. Requirements: Familiar with Python, Django/Flask frameworks, RESTful API development experience. Knowledge of MySQL, Redis databases. E-commerce or payment system experience preferred. Full-time position, bachelor's degree or above, 3-5 years experience."
 
-_Step by step:_
-
+*Step by step:*
 > "I need to hire a developer"
 > [Claude asks for job title]
 > "Python Backend Engineer"
 > [Claude asks for company, requirements, salary, location, etc.]
 
-### Step 2: Validate Completeness
+#### Step 2: Validate Completeness
 
-Before submission, verify all required fields are present. If any are missing, ask the user to provide them:
+Before submission, verify all required fields are present. If any are missing, ask the user to provide them.
 
-- Missing title: "What's the job title for this position?"
-- Missing company: "What's the company name?"
-- Missing requirements: "Please describe the job requirements, including required skills and responsibilities."
-- Missing salary: "What's the salary range for this position?"
-- Missing location: "Where is the work location?"
-- Missing job type: "What's the employment type? (e.g., Full-time, Part-time, Contract)"
-- Missing education: "What's the minimum education requirement?"
-- Missing experience: "How many years of experience are required?"
-
-### Step 3: Publish Job Posting
-
-Use the `scripts/publish_job.py` script to publish the job:
+#### Step 3: Publish Job Posting
 
 ```bash
 python3 scripts/publish_job.py '{
+  "apiUrl": "http://localhost:8989",
+  "action": "publish",
   "title": "<job title>",
   "companyName": "<company name>",
   "requirement": "<detailed requirements>",
@@ -78,43 +67,86 @@ python3 scripts/publish_job.py '{
 }'
 ```
 
-The script will:
+#### Step 4: Confirm Success
 
-- Create a new recruiter account automatically
-- Publish the job posting with all information
-- Return the authentication token and job ID
+After successful publication, inform the user and **save the returned token and job ID** for future operations (update, delete, list matches).
 
-### Step 4: Confirm Success
+---
 
-After successful publication, inform the user:
+### Update Job (action: update)
 
-- Confirm the job was published successfully
-- Provide the job ID for reference
-- Explain that AI matching is in progress (takes ~5 seconds)
-- Mention they will receive candidate matches based on the job requirements
-- Provide the authentication token for future reference (optional)
+Requires the **token** and **jobId** from a previous publish. Only changed fields need to be provided.
 
-**Example response:**
+```bash
+python3 scripts/publish_job.py '{
+  "apiUrl": "http://localhost:8989",
+  "action": "update",
+  "token": "<saved token>",
+  "jobId": "<job id>",
+  "salary": "<new salary range>",
+  "requirement": "<updated requirements>"
+}'
+```
 
-> "Your job posting has been published successfully! Job ID: 7. The AI matching system is analyzing your requirements and will find qualified candidates. This typically takes about 5 seconds. You'll receive candidate matches with similarity scores showing how well each applicant fits your requirements."
+Updatable fields: `title`, `companyName`, `requirement`, `salary`, `location`, `jobType`, `education`, `experience`, `status`.
+
+---
+
+### Delete Job (action: delete)
+
+Soft-deletes the job posting by marking it as INACTIVE. Match history is preserved.
+
+```bash
+python3 scripts/publish_job.py '{
+  "apiUrl": "http://localhost:8989",
+  "action": "delete",
+  "token": "<saved token>",
+  "jobId": "<job id>"
+}'
+```
+
+---
+
+### List Matched Candidates (action: matches)
+
+Retrieve candidates matched by the AI system for a specific job posting.
+
+```bash
+python3 scripts/publish_job.py '{
+  "apiUrl": "http://localhost:8989",
+  "action": "matches",
+  "token": "<saved token>",
+  "jobId": "<job id>"
+}'
+```
+
+Returns a list of matched candidates with similarity scores.
+
+---
+
+## API Configuration
+
+Default API endpoint: `http://localhost:8989`
+
+To use a different endpoint, modify the `apiUrl` parameter when calling the script.
 
 ## Error Handling
 
-If publication fails:
-
+If any operation fails:
 - Check if the API server is running
 - Verify all required fields are provided
 - Ensure the API endpoint is correct
+- For update/delete/matches: ensure a valid **token** and **jobId** are provided
 - Review the error message and guide the user accordingly
 
 ## Resources
 
 ### scripts/publish_job.py
 
-Python script that handles:
-
-- Creating new recruiter accounts
-- Publishing job postings to the API
-- Returning authentication tokens and job IDs
+Python script supporting four actions (`publish`, `update`, `delete`, `matches`):
+- Creating new recruiter accounts (auto-created on publish)
+- Publishing and updating job postings
+- Soft-deleting job postings (mark INACTIVE)
+- Listing AI-matched candidates
 
 The script uses Python's built-in `urllib` library (no external dependencies required).

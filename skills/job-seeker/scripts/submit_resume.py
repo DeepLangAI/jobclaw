@@ -1,89 +1,113 @@
 #!/usr/bin/env python3
 """
-Submit job seeker resume to the job matching API.
+Job seeker CLI: submit, update, delete resume and list matched jobs.
 """
 import sys
 import json
 import urllib.request
 import urllib.error
 
-def submit_resume(resume_data):
-    """
-    Submit resume to the API.
+DEFAULT_API = "http://localhost:8989"
 
-    Args:
-        resume_data: Dictionary containing:
-            - token: Authentication token (optional, will create new user if not provided)
-            - resumeText: Resume content (required)
-            - name: Full name (required)
-            - email: Email address (required)
-            - phone: Phone number (required)
-            - jobIntention: Desired job position (required)
 
-    Returns:
-        Dictionary with API response
-    """
-    # Create new user if no token provided
-    api_url = "https://api.jobclaw.ai"
-    token = resume_data.get('token')
-    if not token:
-        create_url = f"{api_url}/auth/token"
-        create_data = json.dumps({"userType": "JOB_SEEKER"}).encode('utf-8')
-        create_req = urllib.request.Request(
-            create_url,
-            data=create_data,
-            headers={
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            }
-        )
+# ── HTTP helpers ──────────────────────────────────────────────────────────────
 
-        try:
-            with urllib.request.urlopen(create_req) as response:
-                result = json.loads(response.read().decode('utf-8'))
-                token = result['result']['token']
-        except urllib.error.HTTPError as e:
-            error_body = e.read().decode('utf-8')
-            return {'success': False, 'error': f'Failed to create user (Status {e.code}): {error_body}'}
-
-    # Submit resume
-    submit_url = f"{api_url}/job-seekers/resume"
-    submit_data = json.dumps({
-        'resumeText': resume_data['resumeText'],
-        'name': resume_data['name'],
-        'email': resume_data['email'],
-        'phone': resume_data['phone'],
-        'jobIntention': resume_data['jobIntention']
-    }).encode('utf-8')
-
-    submit_req = urllib.request.Request(
-        submit_url,
-        data=submit_data,
-        headers={
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {token}',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
-    )
-
+def _request(url, method="GET", data=None, token=None):
+    """Send an HTTP request and return parsed JSON or an error dict."""
+    headers = {"Content-Type": "application/json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    body = json.dumps(data).encode("utf-8") if data else None
+    req = urllib.request.Request(url, data=body, headers=headers, method=method)
     try:
-        with urllib.request.urlopen(submit_req) as response:
-            result = json.loads(response.read().decode('utf-8'))
-            result['token'] = token
-            return result
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
-        error_body = e.read().decode('utf-8')
-        return {'success': False, 'error': f'Failed to submit resume (Status {e.code}): {error_body}'}
+        return {"success": False, "error": e.read().decode("utf-8")}
 
-if __name__ == '__main__':
+
+def _ensure_token(api_url, token):
+    """Return existing token or create a new JOB_SEEKER account and return its token."""
+    if token:
+        return token, None
+    res = _request(f"{api_url}/auth/token", method="POST", data={"userType": "JOB_SEEKER"})
+    if "result" in res:
+        return res["result"]["token"], None
+    return None, res
+
+
+# ── Actions ───────────────────────────────────────────────────────────────────
+
+def submit_resume(api_url, data):
+    """Submit a new resume."""
+    token, err = _ensure_token(api_url, data.get("token"))
+    if err:
+        return err
+    payload = {k: data[k] for k in ("resumeText", "name", "email", "phone", "jobIntention")}
+    res = _request(f"{api_url}/job-seekers/resume", method="POST", data=payload, token=token)
+    res["token"] = token
+    return res
+
+
+def update_resume(api_url, data):
+    """Update an existing resume / profile (partial update supported)."""
+    token = data.get("token")
+    if not token:
+        return {"success": False, "error": "token is required for update"}
+    fields = ("resumeText", "name", "email", "phone", "jobIntention")
+    payload = {k: data[k] for k in fields if k in data}
+    # Map resumeText to resumeRawContent for the update API
+    if "resumeText" in payload:
+        payload["resumeRawContent"] = payload.pop("resumeText")
+    if not payload:
+        return {"success": False, "error": "No fields to update"}
+    res = _request(f"{api_url}/job-seekers/profile", method="PUT", data=payload, token=token)
+    res["token"] = token
+    return res
+
+
+def delete_resume(api_url, data):
+    """Soft-delete resume by setting status to INACTIVE."""
+    token = data.get("token")
+    if not token:
+        return {"success": False, "error": "token is required for delete"}
+    res = _request(f"{api_url}/job-seekers/profile", method="PUT", data={"status": "INACTIVE"}, token=token)
+    res["token"] = token
+    return res
+
+
+def list_matches(api_url, data):
+    """List matched job positions for the current job seeker."""
+    token = data.get("token")
+    if not token:
+        return {"success": False, "error": "token is required for listing matches"}
+    res = _request(f"{api_url}/matches", token=token)
+    res["token"] = token
+    return res
+
+
+# ── CLI entry ─────────────────────────────────────────────────────────────────
+
+ACTIONS = {
+    "submit": submit_resume,
+    "update": update_resume,
+    "delete": delete_resume,
+    "matches": list_matches,
+}
+
+if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print(json.dumps({'success': False, 'error': 'Usage: submit_resume.py <json_data>'}))
+        print(json.dumps({"success": False, "error": f"Usage: submit_resume.py <json>  (action: {', '.join(ACTIONS)})"}))
         sys.exit(1)
-
     try:
         data = json.loads(sys.argv[1])
-        result = submit_resume(data)
-        print(json.dumps(result, ensure_ascii=False, indent=2))
+        api_url = data.pop("apiUrl", DEFAULT_API)
+        action = data.pop("action", "submit")
+        fn = ACTIONS.get(action)
+        if not fn:
+            print(json.dumps({"success": False, "error": f"Unknown action: {action}. Use: {', '.join(ACTIONS)}"}))
+            sys.exit(1)
+        print(json.dumps(fn(api_url, data), ensure_ascii=False, indent=2))
     except Exception as e:
-        print(json.dumps({'success': False, 'error': str(e)}))
+        print(json.dumps({"success": False, "error": str(e)}))
         sys.exit(1)
