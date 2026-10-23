@@ -59,6 +59,8 @@ if __name__ == "__main__":
         }
         res = _request(f"{api_url}/job-seekers/chat-profile", data=payload, token=token)
         print(json.dumps(res, ensure_ascii=False, indent=2))
+        if not res.get("success", True):
+            sys.exit(1)
     except Exception as e:
         print(json.dumps({"success": False, "error": str(e)}))
         sys.exit(1)
